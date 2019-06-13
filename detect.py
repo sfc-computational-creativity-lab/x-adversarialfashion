@@ -35,7 +35,8 @@ def detect(cfgfile, weightfile, imgfile):
     print('%s: Predicted in %f seconds.' % (imgfile, (finish-start)))
 
     class_names = load_class_names(namesfile)
-    plot_boxes(img, boxes, 'predictions.jpg', class_names)
+    # plot_boxes(img, boxes, 'predictions.jpg', class_names)
+    plot_boxes(img, boxes, '{}'.format(imgfile), class_names)
 
 def detect_cv2(cfgfile, weightfile, imgfile):
     import cv2

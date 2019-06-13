@@ -2,3 +2,11 @@ runs/
 weights/
 testing/
 inria/
+__pycache__/
+.vscode/
+ADVERSARIAL_YOLO_ENV/
+
+
+clean_results.json
+noise_results.json
+patch_results.json

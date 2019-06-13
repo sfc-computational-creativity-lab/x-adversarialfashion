@@ -20,7 +20,7 @@ if __name__ == '__main__':
     cfgfile = "cfg/yolo.cfg"
     weightfile = "weights/yolo.weights"
     patchfile = "saved_patches/patch11.jpg"
-    patchfile = "/home/wvr/Pictures/individualImage_upper_body.png"
+    # patchfile = "/home/wvr/Pictures/individualImage_upper_body.png"
     #patchfile = "/home/wvr/Pictures/class_only.png"
     #patchfile = "/home/wvr/Pictures/class_transfer.png"
     savedir = "testing"
