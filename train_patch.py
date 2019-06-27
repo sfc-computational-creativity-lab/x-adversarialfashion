@@ -20,18 +20,23 @@ import patch_config
 import sys
 import time
 
+
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+print('device: {}'.format(device))
+
+
 class PatchTrainer(object):
     def __init__(self, mode):
         self.config = patch_config.patch_configs[mode]()
 
         self.darknet_model = Darknet(self.config.cfgfile)
         self.darknet_model.load_weights(self.config.weightfile)
-        self.darknet_model = self.darknet_model.eval().cuda() # TODO: Why eval?
-        self.patch_applier = PatchApplier().cuda()
-        self.patch_transformer = PatchTransformer().cuda()
-        self.prob_extractor = MaxProbExtractor(0, 80, self.config).cuda()
-        self.nps_calculator = NPSCalculator(self.config.printfile, self.config.patch_size).cuda()
-        self.total_variation = TotalVariation().cuda()
+        self.darknet_model = self.darknet_model.eval().to(device) # TODO: Why eval?
+        self.patch_applier = PatchApplier().to(device)
+        self.patch_transformer = PatchTransformer().to(device)
+        self.prob_extractor = MaxProbExtractor(0, 80, self.config).to(device)
+        self.nps_calculator = NPSCalculator(self.config.printfile, self.config.patch_size).to(device)
+        self.total_variation = TotalVariation().to(device)
 
         self.writer = self.init_tensorboard(mode)
 
@@ -57,9 +62,9 @@ class PatchTrainer(object):
         time_str = time.strftime("%Y%m%d-%H%M%S")
 
         # Generate stating point
-        # adv_patch_cpu = self.generate_patch("gray")
+        adv_patch_cpu = self.generate_patch("gray")
         #adv_patch_cpu = self.read_image("saved_patches/patchnew0.jpg")
-        adv_patch_cpu = self.read_image("qosmo.jpg")
+        # adv_patch_cpu = self.read_image("qosmo.jpg")
 
         adv_patch_cpu.requires_grad_(True)
 
@@ -84,10 +89,10 @@ class PatchTrainer(object):
             for i_batch, (img_batch, lab_batch) in tqdm(enumerate(train_loader), desc=f'Running epoch {epoch}',
                                                         total=self.epoch_length):
                 with autograd.detect_anomaly():
-                    img_batch = img_batch.cuda()
-                    lab_batch = lab_batch.cuda()
+                    img_batch = img_batch.to(device)
+                    lab_batch = lab_batch.to(device)
                     #print('TRAINING EPOCH %i, BATCH %i'%(epoch, i_batch))
-                    adv_patch = adv_patch_cpu.cuda()
+                    adv_patch = adv_patch_cpu.to(device)
                     adv_batch_t = self.patch_transformer(adv_patch, lab_batch, img_size, do_rotate=True, rand_loc=False)
                     p_img_batch = self.patch_applier(img_batch, adv_batch_t)
                     p_img_batch = F.interpolate(p_img_batch, (self.darknet_model.height, self.darknet_model.width))
@@ -106,7 +111,7 @@ class PatchTrainer(object):
                     nps_loss = nps*0.01
                     tv_loss = tv*2.5
                     det_loss = torch.mean(max_prob)
-                    loss = det_loss + nps_loss + torch.max(tv_loss, torch.tensor(0.1).cuda())
+                    loss = det_loss + nps_loss + torch.max(tv_loss, torch.tensor(0.1).to(device))
 
                     ep_det_loss += det_loss.detach().cpu().numpy()
                     ep_nps_loss += nps_loss.detach().cpu().numpy()
