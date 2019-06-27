@@ -57,8 +57,9 @@ class PatchTrainer(object):
         time_str = time.strftime("%Y%m%d-%H%M%S")
 
         # Generate stating point
-        adv_patch_cpu = self.generate_patch("gray")
+        # adv_patch_cpu = self.generate_patch("gray")
         #adv_patch_cpu = self.read_image("saved_patches/patchnew0.jpg")
+        adv_patch_cpu = self.read_image("qosmo.jpg")
 
         adv_patch_cpu.requires_grad_(True)
 
@@ -144,6 +145,9 @@ class PatchTrainer(object):
             #im = transforms.ToPILImage('RGB')(adv_patch_cpu)
             #plt.imshow(im)
             #plt.savefig(f'pics/{time_str}_{self.config.patch_name}_{epoch}.png')
+
+            im = transforms.ToPILImage('RGB')(adv_patch_cpu)
+            im.save('pics/{}.png'.format(epoch), quality=95)
 
             scheduler.step(ep_loss)
             if True:
