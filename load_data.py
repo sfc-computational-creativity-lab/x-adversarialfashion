@@ -136,6 +136,17 @@ class TotalVariation(nn.Module):
         return tv/torch.numel(adv_patch)
 
 
+class ContentLoss(nn.Module):
+    """ContentLoss: calculates the content loss.
+    """
+
+    def __init__(self):
+        super(ContentLoss, self).__init__()
+
+    def forward(self, adv_patch, orig_img):
+        return F.mse_loss(adv_patch, orig_img)
+
+
 class PatchTransformer(nn.Module):
     """PatchTransformer: transforms batch of patches
 

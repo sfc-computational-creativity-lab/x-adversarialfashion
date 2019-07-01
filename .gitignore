@@ -6,7 +6,7 @@ __pycache__/
 .vscode/
 ADVERSARIAL_YOLO_ENV/
 
-
+pics/
 clean_results.json
 noise_results.json
 patch_results.json
