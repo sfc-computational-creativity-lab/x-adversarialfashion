@@ -5,6 +5,7 @@ inria/
 __pycache__/
 .vscode/
 ADVERSARIAL_YOLO_ENV/
+VENV/
 
 pics/
 clean_results.json
