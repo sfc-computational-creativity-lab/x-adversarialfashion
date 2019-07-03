@@ -1,0 +1,1 @@
+python detect_cam.py cfg/yolo.cfg weights/yolo.weights
