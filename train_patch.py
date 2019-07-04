@@ -13,7 +13,7 @@ import gc
 import matplotlib.pyplot as plt
 from torch import autograd
 from torchvision import transforms
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import subprocess
 
 import patch_config
@@ -66,7 +66,7 @@ class PatchTrainer(object):
         adv_patch_cpu = self.generate_patch("gray")
         #adv_patch_cpu = self.read_image("saved_patches/patchnew0.jpg")
         # adv_patch_cpu = self.read_image("qosmo.jpg")
-        orig_img = self.read_image('qosmo.jpg').to(device)
+        orig_img = self.read_image('imgs/qosmo.jpg').to(device)
 
         adv_patch_cpu.requires_grad_(True)
 
@@ -179,6 +179,8 @@ class PatchTrainer(object):
                 del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, loss
                 torch.cuda.empty_cache()
             et0 = time.time()
+
+        self.writer.close()
 
     def generate_patch(self, type):
         """
