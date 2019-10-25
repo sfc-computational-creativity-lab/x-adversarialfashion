@@ -80,7 +80,7 @@ class NPSCalculator(nn.Module):
         self.printability_array = nn.Parameter(self.get_printability_array(printability_file, patch_side),requires_grad=False)
 
     def forward(self, adv_patch):
-        # calculate euclidian distance between colors in patch and colors in printability_array 
+        # calculate euclidian distance between colors in patch and colors in printability_array
         # square root of sum of squared difference
         color_dist = (adv_patch - self.printability_array+0.000001)
         color_dist = color_dist ** 2
@@ -167,10 +167,10 @@ class PatchTransformer(nn.Module):
         self.maxangle = 20 / 180 * math.pi
         self.medianpooler = MedianPool2d(7,same=True)
         '''
-        kernel = torch.cuda.FloatTensor([[0.003765, 0.015019, 0.023792, 0.015019, 0.003765],                                                                                    
-                                         [0.015019, 0.059912, 0.094907, 0.059912, 0.015019],                                                                                    
-                                         [0.023792, 0.094907, 0.150342, 0.094907, 0.023792],                                                                                    
-                                         [0.015019, 0.059912, 0.094907, 0.059912, 0.015019],                                                                                    
+        kernel = torch.cuda.FloatTensor([[0.003765, 0.015019, 0.023792, 0.015019, 0.003765],
+                                         [0.015019, 0.059912, 0.094907, 0.059912, 0.015019],
+                                         [0.023792, 0.094907, 0.150342, 0.094907, 0.023792],
+                                         [0.015019, 0.059912, 0.094907, 0.059912, 0.015019],
                                          [0.003765, 0.015019, 0.023792, 0.015019, 0.003765]])
         self.kernel = kernel.unsqueeze(0).unsqueeze(0).expand(3,3,-1,-1)
         '''
@@ -183,9 +183,9 @@ class PatchTransformer(nn.Module):
         adv_patch = adv_patch.unsqueeze(0)#.unsqueeze(0)
         adv_batch = adv_patch.expand(lab_batch.size(0), lab_batch.size(1), -1, -1, -1)
         batch_size = torch.Size((lab_batch.size(0), lab_batch.size(1)))
-        
+
         # Contrast, brightness and noise transforms
-        
+
         # Create random contrast tensor
         contrast = torch.FloatTensor(batch_size).uniform_(self.min_contrast, self.max_contrast)
         contrast = contrast.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
@@ -228,7 +228,7 @@ class PatchTransformer(nn.Module):
         anglesize = (lab_batch.size(0) * lab_batch.size(1))
         if do_rotate:
             angle = torch.FloatTensor(anglesize).uniform_(self.minangle, self.maxangle).to(device)
-        else: 
+        else:
             angle = torch.FloatTensor(anglesize).fill_(0).to(device)
 
         # Resizes and rotates
@@ -260,7 +260,7 @@ class PatchTransformer(nn.Module):
         tx = (-target_x+0.5)*2
         ty = (-target_y+0.5)*2
         sin = torch.sin(angle)
-        cos = torch.cos(angle)        
+        cos = torch.cos(angle)
 
         # Theta = rotation,rescale matrix
         theta = torch.FloatTensor(anglesize, 2, 3).fill_(0).to(device)
@@ -387,7 +387,7 @@ class InriaDataset(Dataset):
         img_path = os.path.join(self.img_dir, self.img_names[idx])
         lab_path = os.path.join(self.lab_dir, self.img_names[idx]).replace('.jpg', '.txt').replace('.png', '.txt')
         image = Image.open(img_path).convert('RGB')
-        if os.path.getsize(lab_path):       #check to see if label file contains data. 
+        if os.path.getsize(lab_path):       #check to see if label file contains data.
             label = np.loadtxt(lab_path)
         else:
             label = np.ones([5])
@@ -456,7 +456,7 @@ if __name__ == '__main__':
     cfgfile = "cfg/yolov2.cfg"
     weightfile = "weights/yolov2.weights"
     printfile = "non_printability/30values.txt"
-    
+
     patch_size = 400
 
     darknet_model = Darknet(cfgfile)
@@ -481,7 +481,7 @@ if __name__ == '__main__':
     output = darknet_model(img)
     '''
     optimizer = torch.optim.Adam(model.parameters(), lr = 0.0001)
-    
+
     tl0 = time.time()
     tl1 = time.time()
     for i_batch, (img_batch, lab_batch) in enumerate(test_loader):
@@ -534,3 +534,56 @@ if __name__ == '__main__':
         del img_batch, lab_batch, adv_patch, adv_batch_t, output, max_prob
         torch.cuda.empty_cache()
         tl0 = time.time()
+
+class AdaINStyleLoss(nn.Module):
+
+    def __init__(self):
+        encoder_layers = list(models.vgg19(pretrained=True).features)
+        encoder_1 = torch.nn.Sequential(*encoder_layers[:2])
+        encoder_2 = torch.nn.Sequential(*encoder_layers[2:8])
+        encoder_3 = torch.nn.Sequential(*encoder_layers[8:14])
+        encoder_4 = torch.nn.Sequential(*encoder_layers[14:26])
+        self.encoder_layers_list = [
+            encoder_1,
+            encoder_2,
+            encoder_3,
+            encoder_4,
+        ]
+
+    def _encode(self, input):
+        outputs = [input]
+        for encoder_layer in self.encoder_layers_list:
+            input = encoder_layer(input)
+            outputs.append(input)
+        return outputs
+
+    def _statistics(self, feature):
+        size = features.size()
+        batch_size, n_channels = size[0], size[1]
+        features_flatten = features.view(
+            batch_size, n_channels, -1)
+
+        mean = features_flatten.mean(2)
+        mean = mean.view(batch_size, n_channels, 1, 1)
+
+        std = features_flatten.std(2)
+        std = std.view(batch_size, n_channels, 1, 1) + eps
+        return mean, std
+
+
+    def forward(self, content, style):
+        content_features_list = self._encode(content)
+        style_features_list = self._encode(style)
+
+        for i in range(len(content_features_list)):
+            content_features = content_features_list[i]
+            style_features = style_features_list[i]
+            size = content_features.size()
+            batch_size, n_channels = size[0], size[1]
+            content_mean, content_std = self._statistics(content_features)
+            style_mean, style_std = self._statistics(style_features)
+
+            style_loss += F.mse_loss(content_mean, style_mean) + \
+                F.mse_loss(content_std, style_std)
+        return style_loss
+
