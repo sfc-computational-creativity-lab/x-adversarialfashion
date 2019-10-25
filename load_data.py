@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
 from torch.utils.data import Dataset
-from torchvision import transforms
+from torchvision import transforms, models
 
 from darknet import Darknet
 
@@ -538,6 +538,7 @@ if __name__ == '__main__':
 class AdaINStyleLoss(nn.Module):
 
     def __init__(self):
+        super(AdaINStyleLoss, self).__init__()
         encoder_layers = list(models.vgg19(pretrained=True).features)
         encoder_1 = torch.nn.Sequential(*encoder_layers[:2])
         encoder_2 = torch.nn.Sequential(*encoder_layers[2:8])
@@ -557,7 +558,7 @@ class AdaINStyleLoss(nn.Module):
             outputs.append(input)
         return outputs
 
-    def _statistics(self, feature):
+    def _statistics(self, features):
         size = features.size()
         batch_size, n_channels = size[0], size[1]
         features_flatten = features.view(
@@ -566,6 +567,7 @@ class AdaINStyleLoss(nn.Module):
         mean = features_flatten.mean(2)
         mean = mean.view(batch_size, n_channels, 1, 1)
 
+        eps = 1e-7
         std = features_flatten.std(2)
         std = std.view(batch_size, n_channels, 1, 1) + eps
         return mean, std
@@ -575,6 +577,7 @@ class AdaINStyleLoss(nn.Module):
         content_features_list = self._encode(content)
         style_features_list = self._encode(style)
 
+        style_loss = 0
         for i in range(len(content_features_list)):
             content_features = content_features_list[i]
             style_features = style_features_list[i]
