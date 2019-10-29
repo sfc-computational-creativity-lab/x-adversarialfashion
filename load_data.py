@@ -537,7 +537,7 @@ if __name__ == '__main__':
 
 class AdaINStyleLoss(nn.Module):
 
-    def __init__(self):
+    def __init__(self, device='cuda:0'):
         super(AdaINStyleLoss, self).__init__()
         encoder_layers = list(models.vgg19(pretrained=True).features)
         encoder_1 = torch.nn.Sequential(*encoder_layers[:2])
@@ -545,10 +545,10 @@ class AdaINStyleLoss(nn.Module):
         encoder_3 = torch.nn.Sequential(*encoder_layers[8:14])
         encoder_4 = torch.nn.Sequential(*encoder_layers[14:26])
         self.encoder_layers_list = [
-            encoder_1,
-            encoder_2,
-            encoder_3,
-            encoder_4,
+            encoder_1.to(device),
+            encoder_2.to(device),
+            encoder_3.to(device),
+            encoder_4.to(device),
         ]
 
     def _encode(self, input):
@@ -568,10 +568,9 @@ class AdaINStyleLoss(nn.Module):
         mean = mean.view(batch_size, n_channels, 1, 1)
 
         eps = 1e-7
-        std = features_flatten.std(2)
-        std = std.view(batch_size, n_channels, 1, 1) + eps
+        features_var = features_flatten.var(dim=2) + eps
+        std = features_var.sqrt().view(batch_size, n_channels, 1, 1)
         return mean, std
-
 
     def forward(self, content, style):
         content_features_list = self._encode(content)
@@ -589,4 +588,3 @@ class AdaINStyleLoss(nn.Module):
             style_loss += F.mse_loss(content_mean, style_mean) + \
                 F.mse_loss(content_std, style_std)
         return style_loss
-
