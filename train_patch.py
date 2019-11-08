@@ -38,6 +38,7 @@ class PatchTrainer(object):
         self.nps_calculator = NPSCalculator(self.config.printfile, self.config.patch_size).to(device)
         self.total_variation = TotalVariation().to(device)
         self.contentLoss = ContentLoss().to(device)
+        self.adaIN_style_loss = AdaINStyleLoss().to(device)
 
         self.writer = self.init_tensorboard(mode)
 
@@ -65,9 +66,8 @@ class PatchTrainer(object):
         # Generate stating point
         adv_patch_cpu = self.generate_patch("gray")
         #adv_patch_cpu = self.read_image("saved_patches/patchnew0.jpg")
-        # adv_patch_cpu = self.read_image("qosmo.jpg")
-        orig_img = self.read_image('imgs/qosmo.jpg').to(device)
-
+        # orig_img = self.read_image('imgs/qosmo.jpg').to(device)
+        orig_img = self.read_image('imgs/stone03.png').to(device)
         adv_patch_cpu.requires_grad_(True)
 
         dataset = InriaDataset(self.config.img_dir, self.config.lab_dir, max_lab, img_size, shuffle=True)
@@ -85,6 +85,7 @@ class PatchTrainer(object):
             ep_nps_loss = 0
             # ep_tv_loss = 0
             ep_c_loss = 0
+            ep_adaIN_loss = 0
             ep_loss = 0
             bt0 = time.time()
             for i_batch, (img_batch, lab_batch) in tqdm(enumerate(train_loader), desc=f'Running epoch {epoch}',
@@ -108,19 +109,24 @@ class PatchTrainer(object):
                     nps = self.nps_calculator(adv_patch)
                     # tv = self.total_variation(adv_patch)
                     c = self.contentLoss(adv_patch, orig_img)
+                    adaIN = self.adaIN_style_loss(adv_patch.unsqueeze(0), orig_img.unsqueeze(0).to(device))
 
 
                     nps_loss = nps*0.01
                     # tv_loss = tv*2.5
                     c_loss = c * 2.5
+                    adaIN_loss = adaIN * 1.0
+
                     det_loss = torch.mean(max_prob)
                     # loss = det_loss + nps_loss + torch.max(tv_loss, torch.tensor(0.1).to(device))
-                    loss = det_loss + nps_loss + torch.max(c_loss, torch.tensor(0.1).to(device))
+                    # loss = det_loss + nps_loss + torch.max(c_loss, torch.tensor(0.1).to(device))
+                    loss = det_loss + nps_loss + torch.max(c_loss, torch.tensor(0.1).to(device)) + adaIN_loss
 
                     ep_det_loss += det_loss.detach().cpu().numpy()
                     ep_nps_loss += nps_loss.detach().cpu().numpy()
                     # ep_tv_loss += tv_loss.detach().cpu().numpy()
                     ep_c_loss += c_loss.detach().cpu().numpy()
+                    ep_adaIN_loss += adaIN_loss.detach().cpu().numpy()
                     ep_loss += loss
 
                     loss.backward()
@@ -129,7 +135,7 @@ class PatchTrainer(object):
                     adv_patch_cpu.data.clamp_(0,1)       #keep patch in image range
 
                     bt1 = time.time()
-                    if i_batch%5 == 0:
+                    if i_batch % 5 == 0:
                         iteration = self.epoch_length * epoch + i_batch
 
                         self.writer.add_scalar('total_loss', loss.detach().cpu().numpy(), iteration)
@@ -137,6 +143,7 @@ class PatchTrainer(object):
                         self.writer.add_scalar('loss/nps_loss', nps_loss.detach().cpu().numpy(), iteration)
                         # self.writer.add_scalar('loss/tv_loss', tv_loss.detach().cpu().numpy(), iteration)
                         self.writer.add_scalar('loss/c_loss', c_loss.detach().cpu().numpy(), iteration)
+                        self.writer.add_scalar('loss/adaIN_loss', adaIN_loss.detach().cpu().numpy(), iteration)
                         self.writer.add_scalar('misc/epoch', epoch, iteration)
                         self.writer.add_scalar('misc/learning_rate', optimizer.param_groups[0]["lr"], iteration)
 
@@ -145,7 +152,8 @@ class PatchTrainer(object):
                         print('\n')
                     else:
                         # del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, tv_loss, loss
-                        del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, loss
+                        # del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, loss
+                        del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, adaIN_loss, loss
                         torch.cuda.empty_cache()
                     bt0 = time.time()
             et1 = time.time()
@@ -153,6 +161,7 @@ class PatchTrainer(object):
             ep_nps_loss = ep_nps_loss/len(train_loader)
             # ep_tv_loss = ep_tv_loss/len(train_loader)
             ep_c_loss = ep_c_loss/len(train_loader)
+            ep_adaIN_loss = ep_adaIN_loss/len(train_loader)
             ep_loss = ep_loss/len(train_loader)
 
             #im = transforms.ToPILImage('RGB')(adv_patch_cpu)
@@ -160,7 +169,9 @@ class PatchTrainer(object):
             #plt.savefig(f'pics/{time_str}_{self.config.patch_name}_{epoch}.png')
 
             im = transforms.ToPILImage('RGB')(adv_patch_cpu)
-            im.save('pics/{}.png'.format(epoch), quality=95)
+            if not os.path.exists('pics'):
+                os.mkdir('pics')
+            im.save('pics/{}.png'.format(epoch), quality=100)
 
             scheduler.step(ep_loss)
             if True:
@@ -169,14 +180,16 @@ class PatchTrainer(object):
                 print('  DET LOSS: ', ep_det_loss)
                 print('  NPS LOSS: ', ep_nps_loss)
                 # print('   TV LOSS: ', ep_tv_loss)
-                print('   C LOSS: ', ep_c_loss)
+                # print('   C LOSS: ', ep_c_loss)
+                print('ADAIN LOSS: ', ep_adaIN_loss)
                 print('EPOCH TIME: ', et1-et0)
                 #im = transforms.ToPILImage('RGB')(adv_patch_cpu)
                 #plt.imshow(im)
                 #plt.show()
                 #im.save("saved_patches/patchnew1.jpg")
                 # del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, tv_loss, loss
-                del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, loss
+                # del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, loss
+                del adv_batch_t, output, max_prob, det_loss, p_img_batch, nps_loss, c_loss, adaIN_loss, loss
                 torch.cuda.empty_cache()
             et0 = time.time()
 
