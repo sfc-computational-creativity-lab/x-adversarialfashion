@@ -99,8 +99,8 @@ class PatchTrainer(object):
                     p_img_batch = self.patch_applier(img_batch, adv_batch_t)
                     p_img_batch = F.interpolate(p_img_batch, (self.darknet_model.height, self.darknet_model.width))
 
-                    img = p_img_batch[1, :, :,]
-                    img = transforms.ToPILImage()(img.detach().cpu())
+                    # img = p_img_batch[1, :, :,]
+                    # img = transforms.ToPILImage()(img.detach().cpu())
                     #img.show()
 
 

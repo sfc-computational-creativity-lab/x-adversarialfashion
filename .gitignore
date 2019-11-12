@@ -11,3 +11,7 @@ pics/
 clean_results.json
 noise_results.json
 patch_results.json
+
+# Training dataset
+train_data_0/
+train_data_1/
