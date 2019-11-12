@@ -55,6 +55,7 @@ class UnityDataset(data.Dataset):
 
         self.client.send_string('/start', [self.data_dir, patch_path])
         print('Started to create dataset!')
+        print(f'Next patch path : {patch_path}')
 
         # Receive message from Unity
         self.server.is_done = False
