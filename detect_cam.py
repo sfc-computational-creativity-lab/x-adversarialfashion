@@ -40,11 +40,15 @@ def detect(cfgfile, weightfile):
         finish = time.time()
 
         # if i == 1:
-        print('Predicted in %f seconds.' % (finish-start))
+        # print('Predicted in %f seconds.' % (finish-start))
 
         class_names = load_class_names(namesfile)
         img = plot_boxes(Image.fromarray(img), boxes, class_names=class_names)
         img = np.array(img)
+        # cv2.imshow('Result', img)
+
+        cv2.namedWindow('Result', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('Result', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Result', img)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

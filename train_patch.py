@@ -68,6 +68,7 @@ class PatchTrainer(object):
         # Generate stating point
         adv_patch_cpu = self.generate_patch("gray")
         orig_img = self.read_image('imgs/AF_patch_mayuu_01.jpg').to(device)
+
         adv_patch_cpu.requires_grad_(True)
         self.save_patch(adv_patch_cpu, 0)
 

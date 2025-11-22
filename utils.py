@@ -144,7 +144,7 @@ def get_region_boxes(output, conf_thresh, num_classes, anchors, num_anchors, onl
     det_confs = torch.sigmoid(output[4])
 
     cls_confs = torch.nn.Softmax()(Variable(output[5:5+num_classes].transpose(0,1))).data
-    print(cls_confs.size())
+    # print(cls_confs.size())
     cls_max_confs, cls_max_ids = torch.max(cls_confs, 1)
     cls_max_confs = cls_max_confs.view(-1)
     cls_max_ids = cls_max_ids.view(-1)
@@ -241,6 +241,8 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
         cv2.imwrite(savename, img)
     return img
 
+font = ImageFont.truetype("arial.ttf", 44)
+
 def plot_boxes(img, boxes, savename=None, class_names=None):
     colors = torch.FloatTensor([[1,0,1],[0,0,1],[0,1,1],[0,1,0],[1,1,0],[1,0,0]]);
     def get_color(c, x, max_val):
@@ -262,18 +264,27 @@ def plot_boxes(img, boxes, savename=None, class_names=None):
         y2 = (box[1] + box[3]/2.0) * height
 
         rgb = (255, 0, 0)
+        cls_id = 9999
         if len(box) >= 7 and class_names:
             cls_conf = box[5]
             cls_id = box[6]
-            print('[%i]%s: %f' % (cls_id, class_names[cls_id], cls_conf))
+            # print('[%i]%s: %f' % (cls_id, class_names[cls_id], cls_conf))
             classes = len(class_names)
             offset = cls_id * 123457 % classes
             red   = get_color(2, offset, classes)
             green = get_color(1, offset, classes)
             blue  = get_color(0, offset, classes)
             rgb = (red, green, blue)
-            draw.text((x1, y1), class_names[cls_id], fill=rgb)
-        draw.rectangle([x1, y1, x2, y2], outline = rgb)
+            # draw.text((x1, y1), class_names[cls_id], fill=rgb)
+            # text = class_names[cls_id] + ': ' + str(cls_conf.item())
+            text = class_names[cls_id] + ': ' + '{:.5f}'.format(cls_conf.item())
+            # draw.text((x1, y1), text, fill=rgb)
+            if class_names[cls_id] == 'person':
+                draw.text((x1 + 10, y1), text, fill=rgb, font=font)
+        # draw.rectangle([x1, y1, x2, y2], outline = rgb)
+        if class_names[cls_id] == 'person':
+            # draw.rectangle([x1, y1, x2, y2], outline = rgb)
+            draw.rectangle([x1, y1, x2, y2], outline = rgb, width=2)
     if savename:
         print("save plot results to %s" % savename)
         img.save(savename)

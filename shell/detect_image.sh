@@ -1,0 +1,1 @@
+python detect_image.py cfg/yolo.cfg weights/yolo.weights

@@ -19,10 +19,12 @@ if __name__ == '__main__':
     imgdir = "inria/Test/pos"
     cfgfile = "cfg/yolo.cfg"
     weightfile = "weights/yolo.weights"
-    patchfile = "saved_patches/patch11.jpg"
+    # patchfile = "saved_patches/patch11.jpg"
     # patchfile = "/home/wvr/Pictures/individualImage_upper_body.png"
     #patchfile = "/home/wvr/Pictures/class_only.png"
     #patchfile = "/home/wvr/Pictures/class_transfer.png"
+    # patchfile = "02/16x16.jpg"
+    patchfile = "patch.png"
     savedir = "testing"
 
     darknet_model = Darknet(cfgfile)
