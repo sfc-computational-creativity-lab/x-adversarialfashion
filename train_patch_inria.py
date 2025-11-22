@@ -77,8 +77,13 @@ class PatchTrainer(object):
         adv_patch_cpu = self.generate_patch("gray")
         #adv_patch_cpu = self.read_image("saved_patches/patchnew0.jpg")
         # adv_patch_cpu = self.read_image('imgs/01.png')
+<<<<<<< Updated upstream
         orig_img = self.read_image('imgs/bear2.jpg').to(device)
         orig_img_style = self.read_image('imgs/FXBwRoBZ.jpeg').to(device)
+=======
+        orig_img = self.read_image('imgs/210831_meisai+.jpg').to(device)
+        orig_img_style = self.read_image('imgs/210831_meisai+.jpg').to(device)
+>>>>>>> Stashed changes
 
         adv_patch_cpu.requires_grad_(True)
         self.save_patch(adv_patch_cpu, 0, 0)
@@ -124,13 +129,22 @@ class PatchTrainer(object):
                     max_prob = self.prob_extractor(output)
                     # adaIN_loss = self.adaIN_style_loss(adv_patch.unsqueeze(0), orig_img.unsqueeze(0).to(device)) * 0.1
                     adaIN_loss = self.adaIN_style_loss(adv_patch.unsqueeze(0), orig_img_style.unsqueeze(0).to(device)) * 0.0
+<<<<<<< Updated upstream
                     c_loss = self.content_loss(adv_patch, orig_img) * 5.0
+=======
+                    c_loss = self.content_loss(adv_patch, orig_img) * 8.0
+>>>>>>> Stashed changes
                     tv_loss = self.total_variation(adv_patch) * 0.5
 
                     det_loss = torch.mean(max_prob)
                     # loss = det_loss + adaIN_loss
                     # loss = det_loss + adaIN_loss + torch.max(c_loss, torch.tensor(0.1).to(device))
+<<<<<<< Updated upstream
                     loss = det_loss + adaIN_loss + torch.max(c_loss, torch.tensor(0.1).to(device)) + torch.max(tv_loss, torch.tensor(0.1).to(device))
+=======
+                    # loss = det_loss + adaIN_loss + torch.max(c_loss, torch.tensor(0.1).to(device)) + torch.max(tv_loss, torch.tensor(0.1).to(device))
+                    loss = det_loss + adaIN_loss + c_loss + torch.max(tv_loss, torch.tensor(0.1).to(device))
+>>>>>>> Stashed changes
 
                     ep_det_loss += det_loss.detach().cpu().numpy()
                     ep_adaIN_loss += adaIN_loss.detach().cpu().numpy()
@@ -174,9 +188,12 @@ class PatchTrainer(object):
 
             self.save_patch(adv_patch_cpu, epoch, ep_det_loss)
 
+<<<<<<< Updated upstream
             # self.writer.add_image('patch', adv_patch_cpu, epoch)
             # self.writer.add_image('training_images', torchvision.utils.make_grid(p_img_batch), epoch)
 
+=======
+>>>>>>> Stashed changes
             if det_loss.detach().cpu().numpy() < best_det_loss:
                 best_det_loss = det_loss.detach().cpu().numpy()
                 im = transforms.ToPILImage('RGB')(adv_patch_cpu)
@@ -241,7 +258,10 @@ class PatchTrainer(object):
         if not os.path.exists('pics'):
             os.mkdir('pics')
         im.save('pics/{}_{}.png'.format(epoch, ep_det_loss), quality=100)
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
 
 def main():

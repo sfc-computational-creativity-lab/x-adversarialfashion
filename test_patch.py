@@ -23,8 +23,12 @@ if __name__ == '__main__':
     # patchfile = "/home/wvr/Pictures/individualImage_upper_body.png"
     #patchfile = "/home/wvr/Pictures/class_only.png"
     #patchfile = "/home/wvr/Pictures/class_transfer.png"
+<<<<<<< Updated upstream
     # patchfile = "02/16x16.jpg"
     patchfile = "patch.png"
+=======
+    patchfile = "02/16x16.jpg"
+>>>>>>> Stashed changes
     savedir = "testing"
 
     darknet_model = Darknet(cfgfile)

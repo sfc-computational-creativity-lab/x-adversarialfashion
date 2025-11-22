@@ -276,15 +276,9 @@ def plot_boxes(img, boxes, savename=None, class_names=None):
             blue  = get_color(0, offset, classes)
             rgb = (red, green, blue)
             # draw.text((x1, y1), class_names[cls_id], fill=rgb)
-            # text = class_names[cls_id] + ': ' + str(cls_conf.item())
-            text = class_names[cls_id] + ': ' + '{:.5f}'.format(cls_conf.item())
-            # draw.text((x1, y1), text, fill=rgb)
-            if class_names[cls_id] == 'person':
-                draw.text((x1 + 10, y1), text, fill=rgb, font=font)
-        # draw.rectangle([x1, y1, x2, y2], outline = rgb)
-        if class_names[cls_id] == 'person':
-            # draw.rectangle([x1, y1, x2, y2], outline = rgb)
-            draw.rectangle([x1, y1, x2, y2], outline = rgb, width=2)
+            text = class_names[cls_id] + ': ' + str(cls_conf.item())
+            draw.text((x1, y1), text, fill=rgb)
+        draw.rectangle([x1, y1, x2, y2], outline = rgb)
     if savename:
         print("save plot results to %s" % savename)
         img.save(savename)
